@@ -1,16 +1,10 @@
 # music_player_prototype
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+A new Flutter Music player:
+In development
+Uses -flutter_audio_query for lsiting and searching songs/albums/artists
+     -dart_tags for retrieving albumArts since android 10 doesnt allow fetching from defualt package
+     -music_player for playback functionalities
+     -sqflite for faster loading of musicInfo
+Ui heavily inspired by several dribble shots, including use of thorough animations.
+     
