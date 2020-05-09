@@ -101,7 +101,7 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
                           }}
                           catch(e){};
 
-                          Song song = Song.map(_songList[index]);
+                          Song song = Song.map(songList[index]);
                           return Container(
                             decoration: BoxDecoration(
                                 color: (myList[index] == true)
@@ -217,7 +217,6 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-
     initialiseValuesForBottomBar();
     musicPlayer = MusicPlayer();
     _controller1 =
@@ -239,13 +238,25 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
       curve: Curves.easeIn,
     ));
     _scrollController.addListener(_scrollListener);
+
+
   }
 
   doSomeWork(Song song, int index) {
-
     getArt(song.path); //1:GET COVER ART AND GET PALETTE COLORS
+    musicPlayer.onIsPlaying = () {
+      setState(() {
+        playing = true;
+      });
+      print("playing");
+    };
+    musicPlayer.onIsPaused = () {
+      setState(() {
+        playing = false;
+      });
+      print("paused");
+    };
     if (tap == true) {
-      flag=1;
       lastPosition=0.0;
       control.animateBack(0.4, duration: Duration(milliseconds: 200));
       Timer(Duration(milliseconds: 200), () {
@@ -430,16 +441,14 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
                           scale: name.value,
                           child: IconButton(
                               icon: Icon(
-                                  (flag == 1) ? Icons.pause : Icons.play_arrow,
+                                  (playing==true) ? Icons.pause : Icons.play_arrow,
                                   color: Colors.grey.shade100,
                                   size: 30.0),
                               onPressed: () {
-                                setState(() {
-                                  flag *= -1;
-                                });
-                                (flag == 1)
-                                    ? musicPlayer.resume()
-                                    : musicPlayer.pause();
+                                if (playing == true)
+                                  musicPlayer.pause();
+                                else
+                                  musicPlayer.resume();
                               })) //PLAYICON
                     ],
                   ),
@@ -505,31 +514,32 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
     ));
   }
 
-  getArt(String path) {
-    tp.getTagsFromByteArray(File(path).readAsBytes()).then((l) {
-      if ((l[1].tags['picture']) != null) {
-        String str = ((l[1].tags['picture']).imageData64);
-        art = Image.memory(base64Decode(str));
-        print(str);
-      } else {
-        print("noooo");
-        art = img;
-      }
-    });
+
+}
+getArt(String path) {
+  tp.getTagsFromByteArray(File(path).readAsBytes()).then((l) {
+    if ((l[1].tags['picture']) != null) {
+      String str = ((l[1].tags['picture']).imageData64);
+      art = Image.memory(base64Decode(str));
+      print(str);
+    } else {
+      print("noooo");
+      art = img;
+    }
+  });
 //    Timer(Duration(seconds: 2), () {
 
 //    });
-  }
 }
 
 bool tap = false;
-List _songList;
+List songList;
 String playingSong = "";
 String playingArtist = "";
 
 getSongList() async {
-  _songList = await db.getAllSongs();
-  for (int i = 0; i < _songList.length; i++) {
+  songList = await db.getAllSongs();
+  for (int i = 0; i < songList.length; i++) {
     myList[i] = false;
   }
 }
@@ -537,7 +547,7 @@ getSongList() async {
 Image art = img;
 Color secColor = Colors.black87;
 Color primColor = Colors.black;
-int flag = 1;
+bool playing=false;
 int duration = 0;
 PaletteColor color;
 PaletteColor color2;

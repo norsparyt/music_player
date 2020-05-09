@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:clay_containers/clay_containers.dart';
 import 'package:music_player/music_player.dart';
+import 'package:music_player_prototype/data/data.dart';
 import 'package:music_player_prototype/data/waves.dart';
+import 'package:music_player_prototype/model/song.dart';
 import 'package:music_player_prototype/screens/allSongs.dart';
 
 class playPage extends StatefulWidget {
@@ -16,26 +18,31 @@ class playPage extends StatefulWidget {
 
 class _playPageState extends State<playPage> with TickerProviderStateMixin {
   MusicPlayer musicPlayer;
-  AnimationController _controller, seeking;
+  AnimationController _controller;
 
   _playPageState(this.musicPlayer);
 
-  Animation h1, h2, h3, h4, h5, seek;
+  Animation h1, h2, h3, h4, h5;
+  int currentSongPlayingIndex;
+  double pos=0.0;
 
   @override
   void initState() {
-    seeking = AnimationController(
-        vsync: this, duration: Duration(milliseconds: duration))
-      ..addListener(() {
-        setState(() {});
+    super.initState();
+    musicPlayer.onPosition=(double d){
+      setState(() {
+        pos=d;
       });
+    };
+    for (int i = 0; i < myList.length; i++)
+      if (myList[i] == true) currentSongPlayingIndex = i;
+
     _controller =
         AnimationController(vsync: this, duration: Duration(milliseconds: 800))
           ..addListener(() {
             setState(() {});
           });
     print("SONG DURATION:$duration");
-    super.initState();
     h1 = Tween(begin: 0.28, end: 0.73).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.linear,
@@ -56,25 +63,17 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
       parent: _controller,
       curve: Curves.linear,
     ));
-    seek = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-      parent: seeking,
-      curve: Curves.linear,
-    ));
     print("SONG IS PLAYING AT:$lastPosition");
-    if (flag == 1) {
+    if (playing==true) {
       _controller.forward();
       _controller.repeat(reverse: true);
     }
-    seeking.forward(from: lastPosition);
-    if (flag != 1) seeking.stop();
   }
 
   @override
   void dispose() {
-    lastPosition = seek.value;
     print("LAST POSITION:$lastPosition");
     _controller.dispose();
-    seeking.dispose();
     super.dispose();
   }
 
@@ -137,33 +136,38 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
-                ClayContainer(
-                  height: h * 0.07,
-                  width: h * 0.07,
-                  borderRadius: h * 0.08,
-                  child: Icon(Icons.skip_previous, color: secColor, size: 25.0),
+                GestureDetector(
+                  onTap: () {
+                    currentSongPlayingIndex--;
+                    playTheSong();
+                  },
+                  child: ClayContainer(
+                    height: h * 0.07,
+                    width: h * 0.07,
+                    borderRadius: h * 0.08,
+                    child: Icon(Icons.skip_previous, color: secColor, size: 25.0),
+                  ),
                 ),
 //                Padding(padding: EdgeInsets.all(h*0.02),),
                 GestureDetector(
                   onTap: () {
-                    lastPosition = seek.value;
-                    setState(() {
-                      flag *= -1;
-                    });
-                    (flag == 1) ? musicPlayer.resume() : musicPlayer.pause();
+                    (playing==true) ? musicPlayer.pause():musicPlayer.resume();
                     stopTheAnim();
                   },
                   child: ClayContainer(
                     height: h * 0.09,
                     width: h * 0.09,
                     borderRadius: h * 0.08,
-                    child: Icon((flag == 1) ? Icons.pause : Icons.play_arrow,
+                    child: Icon((playing==true) ? Icons.pause : Icons.play_arrow,
                         color: secColor, size: 35.0),
                   ),
                 ),
 //                Padding(padding: EdgeInsets.all(h*0.02),),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () {
+                    currentSongPlayingIndex++;
+                    playTheSong();
+                  },
                   child: ClayContainer(
                     height: h * 0.07,
                     width: h * 0.07,
@@ -195,7 +199,7 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
                         Container(
 //                              height: h*0.15,
                           color: Colors.grey.shade200.withOpacity(0.7),
-                          width: w * seek.value,
+                          width: w * pos,
                         )
                       ],
                     ),
@@ -211,12 +215,37 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
   }
 
   void stopTheAnim() {
-    flag == 1 ? seeking.forward(from: lastPosition) : seeking.stop();
-    (flag == 1)
+    (playing!=true)
         ? _controller.repeat(reverse: true)
         : _controller.animateTo(0.3,
             curve: Curves.linear, duration: Duration(milliseconds: 400));
   }
-
+  playTheSong(){
+    lastPosition=0.0;
+    Song song = Song.map(songList[currentSongPlayingIndex]);
+    setState(() {
+      playingArtist = song.artistName;
+      playingSong = song.title;
+      duration = int.parse(song.duration);
+    });
+    if(playing==true)
+    musicPlayer.play(MusicItem(
+        url: song.path,
+        id: song.id.toString(),
+        trackName: song.title,
+        artistName: song.artistName,
+        albumName: song.albumName,
+        duration: Duration(milliseconds: int.parse(song.duration))));
+    else
+      {musicPlayer.play(MusicItem(
+          url: song.path,
+          id: song.id.toString(),
+          trackName: song.title,
+          artistName: song.artistName,
+          albumName: song.albumName,
+          duration: Duration(milliseconds: int.parse(song.duration))));
+      musicPlayer.pause();}
+getArt(song.path);
+  }
   showSeekBar() {}
 }
