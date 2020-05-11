@@ -36,6 +36,7 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
     _controller1.dispose();
     _controller2.dispose();
     _scrollController.dispose();
+    control.dispose();
     super.dispose();
   }
 
@@ -94,12 +95,14 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
                         ) {
                           _controller2.forward();
                           _controller1.forward();
-                          try{if (_scrollController.offset <=
-                              _scrollController.position.minScrollExtent &&
-                              !_scrollController.position.outOfRange) {
-                            _controller1.reverse();
-                          }}
-                          catch(e){};
+                          try {
+                            if (_scrollController.offset <=
+                                    _scrollController
+                                        .position.minScrollExtent &&
+                                !_scrollController.position.outOfRange) {
+                              _controller1.reverse();
+                            }
+                          } catch (e) {}
 
                           Song song = Song.map(songList[index]);
                           return Container(
@@ -238,8 +241,7 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
       curve: Curves.easeIn,
     ));
     _scrollController.addListener(_scrollListener);
-
-
+    shouldDisplayBottomBar();
   }
 
   doSomeWork(Song song, int index) {
@@ -257,7 +259,6 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
       print("paused");
     };
     if (tap == true) {
-      lastPosition=0.0;
       control.animateBack(0.4, duration: Duration(milliseconds: 200));
       Timer(Duration(milliseconds: 200), () {
         control.forward(from: 0.4);
@@ -299,9 +300,9 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
     );
     color = (generator.dominantColor);
     if (generator.darkVibrantColor != null)
-    color2 = generator.darkVibrantColor;
+      color2 = generator.darkVibrantColor;
     else
-      color2= generator.dominantColor;
+      color2 = generator.dominantColor;
     setState(() {
       primColor = color.color;
       secColor = color2.color;
@@ -313,30 +314,10 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
       children: <Widget>[
         Container(
           foregroundDecoration: BoxDecoration(
-//              border: Border.all(color: Colors.black,width: 4.0),
               image: DecorationImage(
                   image: AssetImage(recentsList[0].imageUrl),
                   fit: BoxFit.cover)),
         ), //IMAGE
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  primColor.withOpacity(0.8),
-                  primColor.withOpacity(0.5),
-                  primColor.withOpacity(0.2),
-                  primColor.withOpacity(0.1),
-                ],
-                stops: [
-                  0.1,
-                  0.2,
-                  0.3,
-                  1.0,
-                ]),
-          ),
-        ), //GRADIENT
         Container(
           child: CustomPaint(
               size: MediaQuery.of(context).size, painter: CurvePainter()),
@@ -441,7 +422,9 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
                           scale: name.value,
                           child: IconButton(
                               icon: Icon(
-                                  (playing==true) ? Icons.pause : Icons.play_arrow,
+                                  (playing == true)
+                                      ? Icons.pause
+                                      : Icons.play_arrow,
                                   color: Colors.grey.shade100,
                                   size: 30.0),
                               onPressed: () {
@@ -513,15 +496,30 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
       curve: Interval(0.6, 0.601, curve: Curves.easeIn),
     ));
   }
-
-
+  void shouldDisplayBottomBar() {if (duration != 0) {
+    musicPlayer.onIsPlaying = () {
+      setState(() {
+        playing = true;
+      });
+      print("playing");
+    };
+    musicPlayer.onIsPaused = () {
+      setState(() {
+        playing = false;
+      });
+      print("paused");
+    };
+    control.forward();
+    paletteApplied=true;
+      tap = true;
+    resetMyList();
+  }}
 }
 getArt(String path) {
   tp.getTagsFromByteArray(File(path).readAsBytes()).then((l) {
     if ((l[1].tags['picture']) != null) {
       String str = ((l[1].tags['picture']).imageData64);
       art = Image.memory(base64Decode(str));
-      print(str);
     } else {
       print("noooo");
       art = img;
@@ -531,12 +529,6 @@ getArt(String path) {
 
 //    });
 }
-
-bool tap = false;
-List songList;
-String playingSong = "";
-String playingArtist = "";
-
 getSongList() async {
   songList = await db.getAllSongs();
   for (int i = 0; i < songList.length; i++) {
@@ -544,11 +536,14 @@ getSongList() async {
   }
 }
 
+bool tap = false;
+List songList;
+String playingSong = "";
+String playingArtist = "";
 Image art = img;
 Color secColor = Colors.black87;
 Color primColor = Colors.black;
-bool playing=false;
+bool playing = false;
 int duration = 0;
 PaletteColor color;
 PaletteColor color2;
-double lastPosition=0.0;

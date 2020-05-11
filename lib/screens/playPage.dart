@@ -19,7 +19,7 @@ class playPage extends StatefulWidget {
 class _playPageState extends State<playPage> with TickerProviderStateMixin {
   MusicPlayer musicPlayer;
   AnimationController _controller;
-  double percentage=0.0;
+  double percentage = 0.0;
 
   _playPageState(this.musicPlayer);
 
@@ -64,7 +64,6 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
       parent: _controller,
       curve: Curves.linear,
     ));
-    print("SONG IS PLAYING AT:$lastPosition");
     if (playing == true) {
       _controller.forward();
       _controller.repeat(reverse: true);
@@ -73,7 +72,6 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    print("LAST POSITION:$lastPosition");
     _controller.dispose();
     super.dispose();
   }
@@ -202,12 +200,12 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
                             size: MediaQuery.of(context).size,
                             painter: waves(h1.value, h2.value, h3.value,
                                 h4.value, h5.value)),
-                          seekBar(percentage, w, context)
+                        seekBar( w, context)
 //                        Container(
-                              height: h*0.15,
+//                            //  height: h*0.15,
 //                          color: Colors.grey.shade200.withOpacity(0.7),
 //                          width: w * pos,
-                        )
+//                        )
                       ],
                     ),
                   ),
@@ -229,7 +227,6 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
   }
 
   playTheSong() {
-    lastPosition = 0.0;
     Song song = Song.map(songList[currentSongPlayingIndex]);
     setState(() {
       playingArtist = song.artistName;
@@ -257,16 +254,33 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
     getArt(song.path);
   }
 
-  Widget seekBar(double percentage, double w, BuildContext context) {
-    return Container(
-      width: w,
-      color: Colors.red,
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        children: <Widget>[
-          Container(color: Colors.green, width: (percentage / 100) * w)
-        ],
-      ),
-    );
+  double initial = 0.0;
+
+  Widget seekBar( double w, BuildContext context) {
+    return GestureDetector(
+        onPanStart: (DragStartDetails details) {
+          initial = details.globalPosition.dx;
+        },
+        onPanUpdate: (DragUpdateDetails details) {
+          double distance = details.globalPosition.dx - initial;
+          double percentageAddition = distance / 200;
+          setState(() {
+            percentage = (percentage + percentageAddition).clamp(0.0, 100.0);
+            musicPlayer.seek(percentage/100);
+          });
+        },
+        onPanEnd: (DragEndDetails details) {
+          initial = 0.0;
+        },
+        child: Container(
+          color: Colors.transparent,
+          width: w+0.4,
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              Container(color: Colors.grey.shade200.withOpacity(0.7), width: pos*w)
+            ],
+          ),
+        ));
   }
 }
