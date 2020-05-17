@@ -36,14 +36,19 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    for (int i = 0; i < myList.length; i++)
+      if (myList[i] == true) currentSongPlayingIndex = i;
+
     musicPlayer.onPosition = (double d) {
       setState(() {
         pos = d;
       });
     };
-    for (int i = 0; i < myList.length; i++)
-      if (myList[i] == true) currentSongPlayingIndex = i;
-
+    musicPlayer.onCompleted=(){
+      currentSongPlayingIndex++;
+      playTheSong();
+    };
     _controller =
         AnimationController(vsync: this, duration: Duration(milliseconds: 800))
           ..addListener(() {
@@ -80,7 +85,7 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
     for (int i = currentSongPlayingIndex;
         i < (currentSongPlayingIndex + 50);
         i++) {
-      queue.add(songList[i+1]);
+      queue.add(songList[i + 1]);
     }
   }
 
@@ -129,7 +134,31 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
                             size: MediaQuery.of(context).size,
                             painter: waves(h1.value, h2.value, h3.value,
                                 h4.value, h5.value)),
-                        seekBar(w, context)
+                        seekBar(w, context),
+                        Container(
+                          margin: EdgeInsets.all(15.0),
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                              (duration / 60000).floor().toString() +
+                                  ":" +
+                                  ((duration / 1000).round() % 60).toString(),
+                              style: TextStyle(
+                                  fontSize: 17.0,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade400)),
+                        ),
+                        Container(
+                          margin: EdgeInsets.all(10.0),
+                          alignment: Alignment.bottomLeft,
+                          child: Text(
+                              (pos * duration/60000).floor().toString()+
+                                  ":" +
+                                  ((pos * duration/1000).round() % 60).toString(),
+                              style: TextStyle(
+                                  fontSize: 17.0,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.grey.shade700)),
+                        )
                       ],
                     ),
                   ),
@@ -157,21 +186,27 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
   Widget mainPage(double h, double w) {
     return Column(
       children: <Widget>[
-        ClayContainer(
-          customBorderRadius:
-              BorderRadius.vertical(bottom: Radius.circular(170.0)),
-          depth: 40,
-          spread: 10,
-          child: ClipRRect(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(170.0)),
-            child: Container(
-              height: h * 0.45,
-              width: w * 0.8,
-              foregroundDecoration: BoxDecoration(
-                  image: DecorationImage(image: art.image, fit: BoxFit.cover)),
-            ),
-          ),
-        ),
+       Row(
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: <Widget>[
+           IconButton(icon: Icon(Icons.keyboard_arrow_down), onPressed: (){Navigator.of(context).pop();}),
+           Container(child: ClayContainer(
+             customBorderRadius:
+             BorderRadius.vertical(bottom: Radius.circular(170.0)),
+             depth: 40,
+             spread: 10,
+             child: ClipRRect(
+               borderRadius: BorderRadius.vertical(bottom: Radius.circular(170.0)),
+               child: Container(
+                 height: h * 0.45,
+                 width: w * 0.8,
+                 foregroundDecoration: BoxDecoration(
+                     image: DecorationImage(image: art.image, fit: BoxFit.cover)),
+               ),
+             ),
+           ),
+           margin: EdgeInsets.only(right: 15.0),)
+       ],),
         //ALBUMART
         Padding(
           padding: EdgeInsets.only(top: h * 0.06),
@@ -268,7 +303,11 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
         Container(
           color: primColor,
           child: ListTile(
-            title: Text(playingSong,style: TextStyle(color:Colors.grey.shade200),overflow: TextOverflow.ellipsis,),
+            title: Text(
+              playingSong,
+              style: TextStyle(color: Colors.grey.shade200),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
         Expanded(
@@ -312,11 +351,10 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
       child: ListTile(
         title: Text(
           song.title,
-          style: TextStyle(color: primColor ),
+          style: TextStyle(color: primColor),
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Icon(Icons.format_list_bulleted,
-            color:  primColor ),
+        trailing: Icon(Icons.format_list_bulleted, color: primColor),
       ),
     );
   }

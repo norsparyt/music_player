@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
+import 'package:clay_containers/clay_containers.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:music_player/music_player.dart';
 import 'package:music_player_prototype/screens/home.dart';
@@ -31,6 +33,7 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
       albumart,
       name,
       container;
+
   @override
   void dispose() {
     _controller1.dispose();
@@ -132,9 +135,16 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
                                   )),
                               trailing: IconButton(
                                 onPressed: () {},
-                                icon: Icon(
-                                  Icons.more_vert,
+                                icon: IconButton(
+                                  icon: Icon(Icons.more_vert),
                                   color: primColor,
+                                  onPressed: () {
+                                    showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return dialogBox(index);
+                                        });
+                                  },
                                 ),
                               ),
                             ),
@@ -217,6 +227,76 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
     );
   }
 
+  Widget dialogBox(int index) {
+    return Dialog(
+      elevation: 0.0,
+        backgroundColor: Colors.grey.shade300,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.25,
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+             Row(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: <Widget>[
+               boxes("Enqueue",Icons.queue_play_next,index),
+               Padding(padding: EdgeInsets.only(left: 20.0),),
+               boxes("Fav this one", Icons.favorite_border,index),],),
+             Row(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: <Widget>[
+               boxes("Add to Playlist", Icons.playlist_add,index),
+               Padding(padding: EdgeInsets.only(left: 20.0),),
+               boxes("About Track", Icons.info_outline,index),],)
+            ],
+          ),
+        ));
+  }
+double spread=1;
+  Widget boxes(String text, IconData icon,int index) {
+    return GestureDetector(
+      onTap: (){
+        setState(() {
+          spread=0;
+        });
+        switch(text){
+          case "Enqueue":
+            if(currentPlayingIndex!=null)
+              print("Enqueue");
+            break;
+            case "Fav this one":
+            print("Fav this one");
+            break;
+          case"Add to Playlist":
+            print("Add to Playlist");
+            break;
+          case"About Track":
+            print("About Track");
+            break;
+        }
+      },
+      child: ClayContainer(
+            borderRadius: 10.0,
+            emboss: true,
+              spread: spread,
+              width: MediaQuery.of(context).size.width * 0.35,
+              height: MediaQuery.of(context).size.height * 0.07,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  Text(
+                    text,
+                    style: TextStyle(fontSize: 15),
+                  ),
+                  Icon(icon,color: primColor,),
+                ],
+              )),
+    );
+
+  }
+
   @override
   void initState() {
     super.initState();
@@ -243,8 +323,9 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
     _scrollController.addListener(_scrollListener);
     shouldDisplayBottomBar();
   }
-
+int currentPlayingIndex;
   doSomeWork(Song song, int index) {
+    currentPlayingIndex=index;
     getArt(song.path); //1:GET COVER ART AND GET PALETTE COLORS
     musicPlayer.onIsPlaying = () {
       setState(() {
@@ -496,25 +577,29 @@ class _allSongsState extends State<allSongs> with TickerProviderStateMixin {
       curve: Interval(0.6, 0.601, curve: Curves.easeIn),
     ));
   }
-  void shouldDisplayBottomBar() {if (duration != 0) {
-    musicPlayer.onIsPlaying = () {
-      setState(() {
-        playing = true;
-      });
-      print("playing");
-    };
-    musicPlayer.onIsPaused = () {
-      setState(() {
-        playing = false;
-      });
-      print("paused");
-    };
-    control.forward();
-    paletteApplied=true;
+
+  void shouldDisplayBottomBar() {
+    if (duration != 0) {
+      musicPlayer.onIsPlaying = () {
+        setState(() {
+          playing = true;
+        });
+        print("playing");
+      };
+      musicPlayer.onIsPaused = () {
+        setState(() {
+          playing = false;
+        });
+        print("paused");
+      };
+      control.forward();
+      paletteApplied = true;
       tap = true;
-    resetMyList();
-  }}
+      resetMyList();
+    }
+  }
 }
+
 getArt(String path) {
   tp.getTagsFromByteArray(File(path).readAsBytes()).then((l) {
     if ((l[1].tags['picture']) != null) {
@@ -529,6 +614,7 @@ getArt(String path) {
 
 //    });
 }
+
 getSongList() async {
   songList = await db.getAllSongs();
   for (int i = 0; i < songList.length; i++) {
