@@ -18,7 +18,6 @@ class home extends StatefulWidget {
 }
 
 class homeState extends State<home> with SingleTickerProviderStateMixin {
-  AnimationController _controller;
   static String txt = recentsList[0].text;
   double td = 1.0;
 
@@ -332,7 +331,6 @@ class homeState extends State<home> with SingleTickerProviderStateMixin {
   Widget _buildCarouselForKeepListening(BuildContext context) {
     return Swiper(
       onTap: (index) {
-        _controller.forward();
         if (index == 0) {
           setState(() {
             td = 1.2;
@@ -358,11 +356,7 @@ class homeState extends State<home> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 5000))
-          ..addListener(() {
-            setState(() {});
-          });
+
 //    _opacityAnimation = Tween(begin: 0.3, end: 0.03).animate(CurvedAnimation(
 //      parent: _controller,
 //      curve: Curves.decelerate,

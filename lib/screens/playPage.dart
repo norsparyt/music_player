@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:clay_containers/clay_containers.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_audio_query/flutter_audio_query.dart';
+import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:music_player/music_player.dart';
 import 'package:music_player_prototype/data/data.dart';
 import 'package:music_player_prototype/data/waves.dart';
@@ -19,13 +22,16 @@ class playPage extends StatefulWidget {
 class _playPageState extends State<playPage> with TickerProviderStateMixin {
   MusicPlayer musicPlayer;
   AnimationController _controller;
-  double percentage = 0.0;
+  final pageController = PageController(
+    initialPage: 1,
+  );
 
   _playPageState(this.musicPlayer);
 
   Animation h1, h2, h3, h4, h5;
   int currentSongPlayingIndex;
-  double pos = 0.0;
+  double pos = 0.0, initial = 0.0, percentage = 0.0;
+  List queue;
 
   @override
   void initState() {
@@ -68,6 +74,14 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
       _controller.forward();
       _controller.repeat(reverse: true);
     }
+    print(songList.length);
+    print(currentSongPlayingIndex);
+    queue = new List();
+    for (int i = currentSongPlayingIndex;
+        i < (currentSongPlayingIndex + 50);
+        i++) {
+      queue.add(songList[i+1]);
+    }
   }
 
   @override
@@ -78,6 +92,11 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      // navigation bar color
+      statusBarIconBrightness: Brightness.light,
+      statusBarColor: primColor, // status bar color
+    ));
     double h = MediaQuery.of(context).size.height;
     double w = MediaQuery.of(context).size.width;
     return Scaffold(
@@ -87,105 +106,15 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
         color: Colors.grey.shade200,
         child: Column(
           children: <Widget>[
-            ClayContainer(
-              customBorderRadius:
-                  BorderRadius.vertical(bottom: Radius.circular(170.0)),
-              depth: 40,
-              spread: 10,
-              child: ClipRRect(
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(170.0)),
-                child: Container(
-                  height: h * 0.45,
-                  width: w * 0.8,
-                  foregroundDecoration: BoxDecoration(
-                      image:
-                          DecorationImage(image: art.image, fit: BoxFit.cover)),
-                ),
+            GestureDetector(
+              onHorizontalDragUpdate: (e) {
+                showQueuePage(context, h, w);
+              },
+              child: Container(
+                height: h * 0.775,
+                child: mainPage(h, w),
               ),
-            ),
-            //ALBUMART
-            Padding(
-              padding: EdgeInsets.only(top: h * 0.06),
-            ),
-            Container(
-                margin: EdgeInsets.only(bottom: 10.0),
-                padding: EdgeInsets.symmetric(horizontal: 30.0),
-                child: Text(
-                  playingSong,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: secColor,
-                    fontSize: 30.0,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                )),
-            //TEXT OF SONG
-            Container(
-                alignment: Alignment.center,
-                padding: EdgeInsets.symmetric(horizontal: 70.0),
-                child: Text(playingArtist,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: secColor, fontSize: 15.0),
-                    overflow: TextOverflow.ellipsis)),
-            //TEXT OF ARTIST
-            Padding(
-              padding: EdgeInsets.only(top: h * 0.05),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                GestureDetector(
-                  onTap: () {
-                    currentSongPlayingIndex--;
-                    playTheSong();
-                  },
-                  child: ClayContainer(
-                    height: h * 0.07,
-                    width: h * 0.07,
-                    borderRadius: h * 0.08,
-                    child:
-                        Icon(Icons.skip_previous, color: secColor, size: 25.0),
-                  ),
-                ),
-//                Padding(padding: EdgeInsets.all(h*0.02),),
-                GestureDetector(
-                  onTap: () {
-                    (playing == true)
-                        ? musicPlayer.pause()
-                        : musicPlayer.resume();
-                    stopTheAnim();
-                  },
-                  child: ClayContainer(
-                    height: h * 0.09,
-                    width: h * 0.09,
-                    borderRadius: h * 0.08,
-                    child: Icon(
-                        (playing == true) ? Icons.pause : Icons.play_arrow,
-                        color: secColor,
-                        size: 35.0),
-                  ),
-                ),
-//                Padding(padding: EdgeInsets.all(h*0.02),),
-                GestureDetector(
-                  onTap: () {
-                    currentSongPlayingIndex++;
-                    playTheSong();
-                  },
-                  child: ClayContainer(
-                    height: h * 0.07,
-                    width: h * 0.07,
-                    borderRadius: h * 0.08,
-                    child: Icon(
-                      Icons.skip_next,
-                      color: secColor,
-                      size: 25.0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            //OF BUTTONS PLAY PAUSE NEXT
+            ), //PlayPAge
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -200,23 +129,171 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
                             size: MediaQuery.of(context).size,
                             painter: waves(h1.value, h2.value, h3.value,
                                 h4.value, h5.value)),
-                        seekBar( w, context)
-//                        Container(
-//                            //  height: h*0.15,
-//                          color: Colors.grey.shade200.withOpacity(0.7),
-//                          width: w * pos,
-//                        )
+                        seekBar(w, context)
                       ],
                     ),
                   ),
                 ],
               ),
-            )
-            //
+            ) //SEEKBARWAVES
           ],
         ),
       ),
     ));
+  }
+
+  showQueuePage(BuildContext context, double h, double w) {
+    showModalBottomSheet(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        ),
+        context: context,
+        builder: (context) {
+          return queuePage(h, w);
+        });
+  }
+
+  Widget mainPage(double h, double w) {
+    return Column(
+      children: <Widget>[
+        ClayContainer(
+          customBorderRadius:
+              BorderRadius.vertical(bottom: Radius.circular(170.0)),
+          depth: 40,
+          spread: 10,
+          child: ClipRRect(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(170.0)),
+            child: Container(
+              height: h * 0.45,
+              width: w * 0.8,
+              foregroundDecoration: BoxDecoration(
+                  image: DecorationImage(image: art.image, fit: BoxFit.cover)),
+            ),
+          ),
+        ),
+        //ALBUMART
+        Padding(
+          padding: EdgeInsets.only(top: h * 0.06),
+        ),
+        Container(
+            margin: EdgeInsets.only(bottom: 10.0),
+            padding: EdgeInsets.symmetric(horizontal: 30.0),
+            child: Text(
+              playingSong,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: secColor,
+                fontSize: 30.0,
+              ),
+              overflow: TextOverflow.ellipsis,
+            )),
+        //TEXT OF SONG
+        Container(
+            alignment: Alignment.center,
+            padding: EdgeInsets.symmetric(horizontal: 70.0),
+            child: Text(playingArtist,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: secColor, fontSize: 15.0),
+                overflow: TextOverflow.ellipsis)),
+        //TEXT OF ARTIST
+        Padding(
+          padding: EdgeInsets.only(top: h * 0.05),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            GestureDetector(
+              onTap: () {
+                currentSongPlayingIndex--;
+                playTheSong();
+              },
+              child: ClayContainer(
+                height: h * 0.07,
+                width: h * 0.07,
+                borderRadius: h * 0.08,
+                child: Icon(Icons.skip_previous, color: secColor, size: 25.0),
+              ),
+            ),
+//                Padding(padding: EdgeInsets.all(h*0.02),),
+            GestureDetector(
+              onTap: () {
+                (playing == true) ? musicPlayer.pause() : musicPlayer.resume();
+                stopTheAnim();
+              },
+              child: ClayContainer(
+                height: h * 0.09,
+                width: h * 0.09,
+                borderRadius: h * 0.08,
+                child: Icon((playing == true) ? Icons.pause : Icons.play_arrow,
+                    color: secColor, size: 35.0),
+              ),
+            ),
+//                Padding(padding: EdgeInsets.all(h*0.02),),
+            GestureDetector(
+              onTap: () {
+                currentSongPlayingIndex++;
+                playTheSong();
+              },
+              child: ClayContainer(
+                height: h * 0.07,
+                width: h * 0.07,
+                borderRadius: h * 0.08,
+                child: Icon(
+                  Icons.skip_next,
+                  color: secColor,
+                  size: 25.0,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget queuePage(double h, double w) {
+    dynamic temp;
+    return Column(
+      children: <Widget>[
+        Container(
+            margin: EdgeInsets.all(30.0),
+            child: Text(
+              "Queue",
+              style: TextStyle(
+                color: Colors.grey.shade900,
+                fontSize: 30.0,
+              ),
+            )), //QUEUE
+        Container(
+          color: primColor,
+          child: ListTile(
+            title: Text(playingSong,style: TextStyle(color:Colors.grey.shade200),overflow: TextOverflow.ellipsis,),
+          ),
+        ),
+        Expanded(
+          child: Container(
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  border: Border(
+                    top: BorderSide(color: primColor),
+                  )),
+              child: ReorderableListView(
+                  children: <Widget>[
+                    for (int i = 0; i < queue.length; i++) buildQueue(i)
+                  ],
+                  onReorder: (oldIndex, newIndex) {
+                    setState(() {
+                      if (newIndex > oldIndex) newIndex -= 1;
+                      temp = queue.removeAt(oldIndex);
+                      queue.insert(newIndex, temp);
+                      temp = songList.removeAt(oldIndex);
+                      songList.insert(newIndex, temp);
+                    });
+                  })),
+        )
+      ],
+    );
   }
 
   void stopTheAnim() {
@@ -224,6 +301,24 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
         ? _controller.repeat(reverse: true)
         : _controller.animateTo(0.3,
             curve: Curves.linear, duration: Duration(milliseconds: 400));
+  }
+
+  buildQueue(int i) {
+    Song song = Song.map(queue[i]);
+    return Container(
+      key: ValueKey(i),
+      color: Colors.grey.shade200,
+      padding: EdgeInsets.only(left: 10.0),
+      child: ListTile(
+        title: Text(
+          song.title,
+          style: TextStyle(color: primColor ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Icon(Icons.format_list_bulleted,
+            color:  primColor ),
+      ),
+    );
   }
 
   playTheSong() {
@@ -254,9 +349,7 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
     getArt(song.path);
   }
 
-  double initial = 0.0;
-
-  Widget seekBar( double w, BuildContext context) {
+  Widget seekBar(double w, BuildContext context) {
     return GestureDetector(
         onPanStart: (DragStartDetails details) {
           initial = details.globalPosition.dx;
@@ -266,7 +359,7 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
           double percentageAddition = distance / 200;
           setState(() {
             percentage = (percentage + percentageAddition).clamp(0.0, 100.0);
-            musicPlayer.seek(percentage/100);
+            musicPlayer.seek(percentage / 100);
           });
         },
         onPanEnd: (DragEndDetails details) {
@@ -274,11 +367,12 @@ class _playPageState extends State<playPage> with TickerProviderStateMixin {
         },
         child: Container(
           color: Colors.transparent,
-          width: w+0.4,
+          width: w + 0.4,
           child: Row(
             mainAxisSize: MainAxisSize.max,
             children: <Widget>[
-              Container(color: Colors.grey.shade200.withOpacity(0.7), width: pos*w)
+              Container(
+                  color: Colors.grey.shade200.withOpacity(0.7), width: pos * w)
             ],
           ),
         ));
